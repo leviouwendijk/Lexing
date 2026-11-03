@@ -1,6 +1,7 @@
 import Foundation
 
-public struct LexingSets: Sendable, Codable {
+public extension Lexer {
+    struct Vocabulary: Sendable, Codable {
     public let keywords: Set<String>     // words to emit as .keyword
     public let idents: Set<String>       // optionally force some words as .ident
     public let stringBlockKeywords: Set<String> // words that trigger {…} blocks
@@ -9,6 +10,7 @@ public struct LexingSets: Sendable, Codable {
         self.keywords = keywords
         self.idents = idents
         self.stringBlockKeywords = stringBlockKeywords
+    }
     }
 }
 

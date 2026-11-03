@@ -101,7 +101,7 @@ public struct Lexer: Lexing, PositionedLexing {
         case .awaitingContent:
             let policy = activeBlockPolicy ?? options.block_string_policies.fallback
             let start = index
-            let text = readUntilClosing(
+            let text = _block_body(
                 delimiter: policy.delimiter,
                 options: policy.options
             )
@@ -180,7 +180,7 @@ public struct Lexer: Lexing, PositionedLexing {
         }
 
         let dateStart = index
-        if let literal = scanDateLiteral() {
+        if let literal = _date_literal() {
             return emitted(.date_literal(literal), fromScalarBoundary: dateStart)
         }
 
@@ -191,7 +191,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
         if scalar == "\"" {
             advance()
-            guard let literal = readQuotedLiteral() else {
+            guard let literal = _quoted_body() else {
                 return emitted(
                     .error("Unterminated quoted string", at: loc()),
                     fromScalarBoundary: start

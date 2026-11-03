@@ -1,10 +1,12 @@
 import Foundation
 
-// public enum LexStringBlockMode: Sendable { case none, verbatim, trimmed }
-
-public enum LexStringBlockState: Sendable {
-    // case none, awaitingOpen, awaitingContent(LexStringBlockMode), awaitingClose
-    case none, awaitingOpen, awaitingContent, awaitingClose
+public extension Lexer.Block {
+    enum State: Sendable {
+        case none
+        case awaitingOpen
+        case awaitingContent
+        case awaitingClose
+    }
 }
 
 public protocol Lexing: Sendable {
@@ -12,8 +14,6 @@ public protocol Lexing: Sendable {
     var index: Int { get set }
     var line: Int { get set }
     var column: Int { get set }
-
-    var string_block_state: LexStringBlockState { get set }
-
+    var string_block_state: Lexer.Block.State { get set }
     mutating func nextToken() -> Token
 }

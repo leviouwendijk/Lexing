@@ -12,6 +12,26 @@ extension LexingTestSuite {
                 try Expect.equal(Token.less_than.sameCase(as: .less_than), true, "legacy alias")
             }
 
+            Test("canonical declarations retain legacy aliases") {
+                let _: Lexer.Options = LexerOptions()
+                let _: Lexer.Config = LexerConfig()
+                let _: Lexer.Vocabulary = LexingSets(keywords: [])
+                let _: Lexer.Block.Options = BlockStringOptions()
+                let _: Lexer.Block.Policy = BlockStringPolicy()
+                let _: Lexer.Block.State = LexStringBlockState.none
+                try Expect.equal(
+                    String(reflecting: Lexer.Options.self).contains("Lexer.Options"),
+                    true,
+                    "canonical options identity"
+                )
+                var options = Lexer.Options()
+                options.emit.whitespace = true
+                options.emit_whitespace = false
+                try Expect.equal(options.emit.whitespace, false, "legacy field forwards")
+                options.block_string_policies = .init(fallback: .init(delimiter: .parens))
+                try Expect.equal(options.block.policies.fallback.delimiter, .parens, "block storage")
+            }
+
             Test("nested options write back to underlying settings") {
                 let _: Lexer.Vocabulary = .init(keywords: [])
                 var options = Lexer.Options()

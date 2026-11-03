@@ -1,15 +1,17 @@
 import Foundation
 import Position
 
-public enum LexerErrorStrategy: Sendable {
-    case throwing
-    case error_token
-    case diagnose_only(@Sendable (String, Position) -> Void)
-}
+public extension Lexer {
+    enum ErrorStrategy: Sendable {
+        case throwing
+        case error_token
+        case diagnose_only(@Sendable (String, Position) -> Void)
+    }
 
-public struct LexerConfig: Sendable {
-    public var errorStrategy: LexerErrorStrategy = .throwing
-    public var unescapeStringsInLexer = true
-    
-    public init() {}
+    struct Config: Sendable {
+        public var errorStrategy: ErrorStrategy = .throwing
+        public var unescapeStringsInLexer = true
+
+        public init() {}
+    }
 }

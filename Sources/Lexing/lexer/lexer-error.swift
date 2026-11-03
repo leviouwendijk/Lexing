@@ -1,7 +1,8 @@
 import Foundation
 import Position
 
-public enum LexerError: Error, LocalizedError {
+public extension Lexer {
+    enum Error: Swift.Error, LocalizedError {
     case unexpectedEOF(context: String, at: Position)
     case unterminated(delimiter: String, at: Position)
     case invalidEscape(sequence: String, at: Position)
@@ -27,6 +28,7 @@ public enum LexerError: Error, LocalizedError {
         case .message(let m, let at): 
             return "\(m) at \(at.line):\(at.column)" 
         }
+    }
     }
 }
 

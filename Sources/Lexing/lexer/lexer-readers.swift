@@ -1,7 +1,7 @@
 import Foundation
 
 public extension Lexer {
-    mutating func readQuotedLiteral() -> String? {
+    internal mutating func _quoted_body() -> String? {
         // assumes opening " already consumed
         var out = String.UnicodeScalarView()
         while let s = peek() {
@@ -25,7 +25,7 @@ public extension Lexer {
         return nil
     }
 
-    mutating func readUntilClosing(
+    internal mutating func _block_body(
         delimiter: Delimiter,
         options: BlockStringOptions
     ) -> String {
@@ -235,7 +235,7 @@ public extension Lexer {
     }
 
     /// Fast path for date-like literals; return nil to skip if not sure.
-    mutating func scanDateLiteral() -> String? {
+    internal mutating func _date_literal() -> String? {
         // minimal stub: recognize YYYY-MM-DD or YYYY/MM/DD
         let start = index
         let startLine = line

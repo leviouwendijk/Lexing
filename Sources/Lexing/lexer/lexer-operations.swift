@@ -6,7 +6,7 @@ public extension Lexer {
         fileprivate var lexer: Lexer
 
         public mutating func date_literal() -> String? {
-            lexer.scanDateLiteral()
+            lexer._date_literal()
         }
     }
 
@@ -18,7 +18,7 @@ public extension Lexer {
             guard lexer.match("\"") else {
                 throw LexerError.message("Expected opening double quote", at: at)
             }
-            guard let text = lexer.readQuotedLiteral() else {
+            guard let text = lexer._quoted_body() else {
                 throw LexerError.unterminated(delimiter: "\"", at: at)
             }
             return text
@@ -33,7 +33,7 @@ public extension Lexer {
                   lexer.match(delimiter.start) else {
                 throw LexerError.message("Expected opening delimiter", at: at)
             }
-            let text = lexer.readUntilClosing(delimiter: delimiter, options: options)
+            let text = lexer._block_body(delimiter: delimiter, options: options)
             guard lexer.match(delimiter.end) else {
                 throw LexerError.unterminated(delimiter: delimiter.end, at: at)
             }
