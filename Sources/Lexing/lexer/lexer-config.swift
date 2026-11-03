@@ -2,7 +2,11 @@ public extension Lexer {
     struct Config: Sendable {
         public var unescapeQuoted: Bool
 
-        public init(unescapeQuoted: Bool = true) {
+        public init() {
+            self.unescapeQuoted = true
+        }
+
+        public init(unescapeQuoted: Bool) {
             self.unescapeQuoted = unescapeQuoted
         }
     }
