@@ -75,6 +75,9 @@ public struct Lexer: Lexing, PositionedLexing {
                     if options.emit_comments {
                         return emitted(comment, fromScalarBoundary: commentStart)
                     }
+                    if case .error = comment {
+                        return emitted(comment, fromScalarBoundary: commentStart)
+                    }
                     continue
                 }
 
@@ -84,7 +87,12 @@ public struct Lexer: Lexing, PositionedLexing {
             let policy = activeBlockPolicy ?? options.block_string_policies.fallback
             let start = index
             guard match(policy.delimiter.start) else {
-                return emitted(.eof, fromScalarBoundary: start)
+                string_block_state = .none
+                activeBlockPolicy = nil
+                return emitted(
+                    .error("Expected opening delimiter '\(policy.delimiter.start)'", at: loc()),
+                    fromScalarBoundary: start
+                )
             }
 
             string_block_state = .awaitingContent
@@ -123,6 +131,9 @@ public struct Lexer: Lexing, PositionedLexing {
                     if options.emit_comments {
                         return emitted(comment, fromScalarBoundary: commentStart)
                     }
+                    if case .error = comment {
+                        return emitted(comment, fromScalarBoundary: commentStart)
+                    }
                     continue
                 }
 
@@ -132,7 +143,12 @@ public struct Lexer: Lexing, PositionedLexing {
             let policy = activeBlockPolicy ?? options.block_string_policies.fallback
             let start = index
             guard match(policy.delimiter.end) else {
-                return emitted(.eof, fromScalarBoundary: start)
+                string_block_state = .none
+                activeBlockPolicy = nil
+                return emitted(
+                    .error("Unterminated block: expected '\(policy.delimiter.end)'", at: loc()),
+                    fromScalarBoundary: start
+                )
             }
 
             string_block_state = .none
@@ -154,8 +170,13 @@ public struct Lexer: Lexing, PositionedLexing {
         }
 
         let commentStart = index
-        if let comment = readComment(options.comments), options.emit_comments {
-            return emitted(comment, fromScalarBoundary: commentStart)
+        if let comment = readComment(options.comments) {
+            if options.emit_comments {
+                return emitted(comment, fromScalarBoundary: commentStart)
+            }
+            if case .error = comment {
+                return emitted(comment, fromScalarBoundary: commentStart)
+            }
         }
 
         let dateStart = index
@@ -170,7 +191,12 @@ public struct Lexer: Lexing, PositionedLexing {
 
         if scalar == "\"" {
             advance()
-            let literal = readQuotedLiteral()
+            guard let literal = readQuotedLiteral() else {
+                return emitted(
+                    .error("Unterminated quoted string", at: loc()),
+                    fromScalarBoundary: start
+                )
+            }
             return emitted(.string(literal), fromScalarBoundary: start)
         }
 
@@ -214,7 +240,14 @@ public struct Lexer: Lexing, PositionedLexing {
         }
 
         if CharacterSet.decimalDigits.contains(scalar) {
-            let (raw, value) = readNumberRawAndValue()
+            let location = loc()
+            let (raw, parsed) = readNumberRawAndValue()
+            guard let value = parsed else {
+                return emitted(
+                    .error("Invalid numeric literal '\(raw)'", at: location),
+                    fromScalarBoundary: start
+                )
+            }
             return emitted(.number(value, raw: raw), fromScalarBoundary: start)
         }
 
@@ -237,8 +270,17 @@ public struct Lexer: Lexing, PositionedLexing {
             return emitted(.identifier(identifier), fromScalarBoundary: start)
         }
 
+        let location = loc()
         advance()
-        return nil
+        switch options.unsupported_scalars {
+        case .error_token:
+            return emitted(
+                .error("Unsupported source scalar '\(scalar)'", at: location),
+                fromScalarBoundary: start
+            )
+        case .skip:
+            return nil
+        }
     }
 
     @inline(__always)

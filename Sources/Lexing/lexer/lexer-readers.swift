@@ -1,12 +1,12 @@
 import Foundation
 
 public extension Lexer {
-    mutating func readQuotedLiteral() -> String {
+    mutating func readQuotedLiteral() -> String? {
         // assumes opening " already consumed
         var out = String.UnicodeScalarView()
         while let s = peek() {
             advance()
-            if s == "\"" { break }
+            if s == "\"" { return String(out) }
             if s == "\\" { // simple escapes
                 if let n = peek() {
                     advance()
@@ -18,11 +18,11 @@ public extension Lexer {
                     default: out.append(n)
                     }
                     continue
-                } else { break }
+                } else { return nil }
             }
             out.append(s)
         }
-        return String(out)
+        return nil
     }
 
     mutating func readUntilClosing(
@@ -162,7 +162,7 @@ public extension Lexer {
     }
 
     @available(*, message: "possibly superseded by readNumberRawAndValue")
-    mutating func readNumber() -> Decimal {
+    mutating func readNumber() -> Decimal? {
         var buf = String.UnicodeScalarView()
         var sawDot = false
         while let s = peek() {
@@ -174,10 +174,10 @@ public extension Lexer {
             }
             break
         }
-        return Decimal(string: String(buf)) ?? 0
+        return Decimal(string: String(buf), locale: Locale(identifier: "en_US_POSIX"))
     }
 
-    mutating func readNumberRawAndValue() -> (raw: String, value: Decimal) {
+    mutating func readNumberRawAndValue() -> (raw: String, value: Decimal?) {
         var buf = String.UnicodeScalarView()
         var sawDot = false
         while let s = peek() {
@@ -186,7 +186,7 @@ public extension Lexer {
             break
         }
         let raw = String(buf)
-        return (raw, Decimal(string: raw) ?? 0)
+        return (raw, Decimal(string: raw, locale: Locale(identifier: "en_US_POSIX")))
     }
 
     // @inlinable
@@ -238,8 +238,14 @@ public extension Lexer {
     mutating func scanDateLiteral() -> String? {
         // minimal stub: recognize YYYY-MM-DD or YYYY/MM/DD
         let start = index
+        let startLine = line
+        let startColumn = column
         var buf = String.UnicodeScalarView()
-        func rollback() { index = start } // line/column drift is harmless for tokens
+        func rollback() {
+            index = start
+            line = startLine
+            column = startColumn
+        }
 
         // need 10 or more chars
         for _ in 0..<10 {
@@ -247,8 +253,12 @@ public extension Lexer {
             buf.append(s); advance()
         }
         let s = String(buf)
-        let re = try! NSRegularExpression(pattern: #"^\d{4}[-/\.]\d{2}[-/\.]\d{2}"#)
-        if re.firstMatch(in: s, range: NSRange(location: 0, length: s.utf16.count)) != nil {
+        let parts = Array(s.unicodeScalars)
+        let numericOffsets = [0, 1, 2, 3, 5, 6, 8, 9]
+        if parts.count == 10,
+           numericOffsets.allSatisfy({ CharacterSet.decimalDigits.contains(parts[$0]) }),
+           ["-", "/", "."].contains(String(parts[4])),
+           ["-", "/", "."].contains(String(parts[7])) {
             // extend greedily over remaining digits/sep
             while let u = peek(), CharacterSet.decimalDigits.contains(u) || u == "-" || u == "/" || u == "." {
                 buf.append(u); advance()
@@ -304,7 +314,13 @@ public extension Lexer {
                             continue
                         }
                         if allows_nesting, match(start) { depth += 1; continue }
-                        out.append(peek()!); advance()
+                        if let scalar = peek() {
+                            out.append(scalar)
+                            advance()
+                        }
+                    }
+                    guard depth == 0 else {
+                        return .error("Unterminated block comment", at: loc())
                     }
                     return .comment_block(String(out))
                 }

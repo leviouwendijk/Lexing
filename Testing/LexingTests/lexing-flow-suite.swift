@@ -7,5 +7,8 @@ enum LexingTestSuite {
     ) {
         lexicalProvenanceSuite
         tokenCodableSuite
+        correctnessSuite
+        apiSuite
+        operationsSuite
     }
 }

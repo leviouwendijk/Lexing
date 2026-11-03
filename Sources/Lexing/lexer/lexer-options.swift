@@ -1,6 +1,13 @@
 import Foundation
 
 public struct LexerOptions: Sendable {
+    public enum UnsupportedScalarPolicy: Sendable {
+        case error_token
+        case skip
+    }
+
+    /// Unsupported input is observable by default.
+    public var unsupported_scalars: UnsupportedScalarPolicy = .error_token
     public enum IdentifierContinuation: Sendable {
         case dotted_hyphenated
         case punctuation_delimited

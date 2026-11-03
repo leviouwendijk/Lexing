@@ -129,7 +129,7 @@ public enum Token: Equatable, Sendable, Codable, Hashable {
         }
     }
 
-    public func sameCase(as other: Token) -> Bool {
+    public func samecase(as other: Token) -> Bool {
         switch (self, other) {
         case (.left_brace, .left_brace),
              (.right_brace, .right_brace),
@@ -137,7 +137,8 @@ public enum Token: Equatable, Sendable, Codable, Hashable {
              (.right_parenthesis, .right_parenthesis),
              (.left_bracket, .left_bracket),
              (.right_bracket, .right_bracket),
-             (.less_than, .greater_than),
+             (.less_than, .less_than),
+             (.greater_than, .greater_than),
              (.arrow, .arrow),
              (.dot, .dot),
              (.equals, .equals),
