@@ -5,6 +5,38 @@ import Testing
 extension LexingTestSuite {
     static var correctnessSuite: TestSuite {
         TestSuite("lexical-correctness", tags: ["correctness", "diagnostics"]) {
+            Test("suppressed newline and indentation preserve nested tokens") {
+                var options = Lexer.Options()
+                options.emit.newlines = false
+                options.emit.whitespace = false
+                let source = "outer {\n    inner {}\n}"
+                var lexer = Lexer(
+                    source: source,
+                    sets: .init(keywords: []),
+                    options: options
+                )
+                let collection = lexer.tokens.collect(map: true)
+                try Expect.equal(
+                    collection.values,
+                    [
+                        .identifier("outer"), .left_brace,
+                        .identifier("inner"), .left_brace, .right_brace,
+                        .right_brace, .eof
+                    ],
+                    "suppressed trivia must not become errors"
+                )
+                try Expect.equal(collection.ranges?[2].start.offset, 12, "nested identifier offset")
+            }
+
+            Test("emitted newlines survive suppressed indentation") {
+                var lexer = Lexer(source: "outer {\n    inner", sets: .init(keywords: []))
+                try Expect.equal(
+                    lexer.tokens.collect(map: false).values,
+                    [.identifier("outer"), .left_brace, .newline, .identifier("inner"), .eof],
+                    "emitted newline remains visible"
+                )
+            }
+
             Test("suppressed comments do not produce unsupported newline errors") {
                 var options = Lexer.Options()
                 options.emit.comments = false

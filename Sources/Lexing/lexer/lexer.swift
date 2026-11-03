@@ -160,13 +160,19 @@ public struct Lexer: Lexing, PositionedLexing {
         }
 
         let whitespaceStart = index
-        if let whitespace = readWhitespaceRun(), options.emit_whitespace {
-            return emitted(.whitespace(whitespace), fromScalarBoundary: whitespaceStart)
+        if let whitespace = readWhitespaceRun() {
+            if options.emit_whitespace {
+                return emitted(.whitespace(whitespace), fromScalarBoundary: whitespaceStart)
+            }
+            return nil
         }
 
         let newlineStart = index
-        if readNormalizedNewline(options.normalize_newlines), options.emit_newlines {
-            return emitted(.newline, fromScalarBoundary: newlineStart)
+        if readNormalizedNewline(options.normalize_newlines) {
+            if options.emit_newlines {
+                return emitted(.newline, fromScalarBoundary: newlineStart)
+            }
+            return nil
         }
 
         let commentStart = index
