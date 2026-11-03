@@ -108,6 +108,30 @@ extension LexingTestSuite {
                 try Expect.equal(lexer.column, 1, "column restored")
             }
 
+            Test("quoted escape handling follows explicit configuration") {
+                let source = "\"one\\ntwo\\\"three\""
+                var decoded = Lexer(source: source, sets: .init(keywords: []))
+                try Expect.equal(decoded.nextToken(), .string("one\ntwo\"three"), "default decoding")
+
+                let config = Lexer.Config(unescapeQuoted: false)
+                var preserved = Lexer(source: source, sets: .init(keywords: []), config: config)
+                try Expect.equal(preserved.nextToken(), .string("one\\ntwo\\\"three"), "raw escapes")
+
+                var reader = Lexer(source: source, sets: .init(keywords: []), config: config)
+                try Expect.equal(try reader.read.quoted(), "one\\ntwo\\\"three", "read wrapper")
+            }
+
+            Test("mapped token collections retain located lexical errors") {
+                var lexer = Lexer(source: "?ok", sets: .init(keywords: []))
+                let collection = lexer.tokens.collect(map: true)
+                try Expect.equal(collection.errors?.count, 1, "error count")
+                try Expect.equal(collection.errors?.first?.range.offsets, 0..<1, "Character range")
+                try Expect.equal(collection.errors?.first?.utf8Range?.lowerBound.offset, 0, "byte start")
+                try Expect.equal(collection.errors?.first?.utf8Range?.upperBound.offset, 1, "byte end")
+                try Expect.equal(collection.values[1], .identifier("ok"), "recognition continues")
+                try Expect.equal(collection.values[2], .eof, "real EOF")
+            }
+
             Test("unterminated quote reports an error and then EOF") {
                 var lexer = Lexer(source: "\"unfinished", sets: LexingSets(keywords: []))
                 if case .error = lexer.nextToken() {

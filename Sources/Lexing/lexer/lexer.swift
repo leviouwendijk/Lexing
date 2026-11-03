@@ -335,20 +335,6 @@ public struct Lexer: Lexing, PositionedLexing {
         )
     }
 
-    @inline(__always)
-    mutating func error(_ message: String) throws -> Token {
-        let location = loc()
-
-        switch config.errorStrategy {
-        case .throwing:
-            throw LexerError.message(message, at: location)
-        case .error_token:
-            return .error(message, at: location)
-        case .diagnose_only(let sink):
-            sink(message, location)
-            return .eof
-        }
-    }
 }
 
 private extension Lexer {

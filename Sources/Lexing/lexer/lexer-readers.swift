@@ -2,25 +2,29 @@ import Foundation
 
 public extension Lexer {
     internal mutating func _quoted_body() -> String? {
-        // assumes opening " already consumed
+        // Assumes the opening quote has already been consumed.
         var out = String.UnicodeScalarView()
-        while let s = peek() {
+        while let scalar = peek() {
             advance()
-            if s == "\"" { return String(out) }
-            if s == "\\" { // simple escapes
-                if let n = peek() {
-                    advance()
-                    switch n {
-                    case "n": out.append("\n")
-                    case "t": out.append("\t")
-                    case "\"": out.append("\"")
-                    case "\\": out.append("\\")
-                    default: out.append(n)
-                    }
+            if scalar == "\"" { return String(out) }
+            if scalar == "\\" {
+                guard let escaped = peek() else { return nil }
+                advance()
+                if !config.unescapeQuoted {
+                    out.append(scalar)
+                    out.append(escaped)
                     continue
-                } else { return nil }
+                }
+                switch escaped {
+                case "n": out.append("\n")
+                case "t": out.append("\t")
+                case "\"": out.append("\"")
+                case "\\": out.append("\\")
+                default: out.append(escaped)
+                }
+                continue
             }
-            out.append(s)
+            out.append(scalar)
         }
         return nil
     }

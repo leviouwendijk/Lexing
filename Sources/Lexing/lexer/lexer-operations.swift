@@ -48,6 +48,14 @@ public extension Lexer {
             public let values: [Token]
             public let ranges: [PositionRange]?
             public let lexed: [LexedToken]?
+
+            /// Located lexical errors are available only for mapped collections.
+            public var errors: [LexedToken]? {
+                lexed?.filter {
+                    if case .error = $0.token { return true }
+                    return false
+                }
+            }
         }
 
         public mutating func collect(map: Bool = true) -> Collection {
