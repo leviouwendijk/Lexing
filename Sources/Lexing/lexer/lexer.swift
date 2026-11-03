@@ -177,6 +177,7 @@ public struct Lexer: Lexing, PositionedLexing {
             if case .error = comment {
                 return emitted(comment, fromScalarBoundary: commentStart)
             }
+            return nil
         }
 
         let dateStart = index

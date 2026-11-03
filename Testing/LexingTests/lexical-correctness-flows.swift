@@ -5,6 +5,38 @@ import Testing
 extension LexingTestSuite {
     static var correctnessSuite: TestSuite {
         TestSuite("lexical-correctness", tags: ["correctness", "diagnostics"]) {
+            Test("suppressed comments do not produce unsupported newline errors") {
+                var options = Lexer.Options()
+                options.emit.comments = false
+                options.emit.newlines = false
+                let source = "// note\nname = \"one\"\n/* hidden */\nname = \"two\""
+                var lexer = Lexer(
+                    source: source,
+                    sets: .init(keywords: []),
+                    options: options
+                )
+                let collection = lexer.tokens.collect(map: true)
+                try Expect.equal(
+                    collection.values,
+                    [
+                        .identifier("name"), .equals, .string("one"),
+                        .identifier("name"), .equals, .string("two"), .eof
+                    ],
+                    "two parsed assignments with comments suppressed"
+                )
+                try Expect.equal(collection.ranges?.first?.start.offset, 8, "first identifier start")
+                try Expect.equal(collection.ranges?.last?.end.offset, source.count, "source EOF")
+            }
+
+            Test("suppressed comment still allows newline emission") {
+                var lexer = Lexer(source: "// note\nname", sets: .init(keywords: []))
+                try Expect.equal(
+                    lexer.tokens.collect(map: false).values,
+                    [.newline, .identifier("name"), .eof],
+                    "newline remains visible after a suppressed comment"
+                )
+            }
+
             Test("punctuation case comparison is reflexive and distinct") {
                 try Expect.equal(Token.less_than.sameCase(as: .less_than), true, "less-than matches itself")
                 try Expect.equal(Token.greater_than.sameCase(as: .greater_than), true, "greater-than matches itself")
