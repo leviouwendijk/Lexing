@@ -272,7 +272,7 @@ public extension Lexer {
     mutating func readWhitespaceRun() -> String? {
         var out = String.UnicodeScalarView()
         var consumed = false
-        while let s = peek(), s == " " || s == "\t" || s == "\r" {
+        while let s = peek(), s == " " || s == "\t" {
             out.append(s); advance(); consumed = true
         }
         return consumed ? String(out) : nil

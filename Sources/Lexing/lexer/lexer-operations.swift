@@ -47,13 +47,7 @@ public extension Lexer {
         public struct Collection: Sendable {
             public let values: [Token]
             public let ranges: [PositionRange]?
-
-            public var lexed: [LexedToken]? {
-                guard let ranges, ranges.count == values.count else { return nil }
-                return zip(values, ranges).map {
-                    LexedToken(token: $0.0, range: $0.1)
-                }
-            }
+            public let lexed: [LexedToken]?
         }
 
         public mutating func collect(map: Bool = true) -> Collection {
@@ -61,10 +55,11 @@ public extension Lexer {
                 let values = lexer.lexedTokens()
                 return Collection(
                     values: values.map(\.token),
-                    ranges: values.map(\.range)
+                    ranges: values.map(\.range),
+                    lexed: values
                 )
             }
-            return Collection(values: lexer.collectAllTokens(), ranges: nil)
+            return Collection(values: lexer.collectAllTokens(), ranges: nil, lexed: nil)
         }
     }
 

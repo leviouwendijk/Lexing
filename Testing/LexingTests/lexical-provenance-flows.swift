@@ -9,6 +9,65 @@ extension LexingTestSuite {
             "lexical-provenance",
             tags: ["lexer", "position", "unicode"]
         ) {
+            Test("UTF-8 provenance and Character spans agree across CRLF") {
+                let source = "é\r\nfoo"
+                var lexer = Lexer(source: source, sets: .init(keywords: []))
+                let lexed = lexer.lexedTokens()
+                try Expect.equal(
+                    lexed.map(\.token),
+                    [.identifier("é"), .newline, .identifier("foo"), .eof],
+                    "lexical sequence"
+                )
+                try Expect.equal(
+                    lexed.map(\.range.offsets),
+                    [0..<1, 1..<2, 2..<5, 5..<5],
+                    "Character spans"
+                )
+                try Expect.equal(
+                    lexed.map { $0.utf8Range?.lowerBound.offset },
+                    [0, 2, 4, 7],
+                    "UTF-8 starts"
+                )
+                try Expect.equal(
+                    lexed.map { $0.utf8Range?.upperBound.offset },
+                    [2, 4, 7, 7],
+                    "UTF-8 ends"
+                )
+                let location = lexer.loc()
+                try Expect.equal(location.line, 2, "EOF line")
+                try Expect.equal(location.column, 4, "EOF Character column")
+                let map = Position.TextMap(source: source)
+                try Expect.equal(
+                    try map.range(lexed[2].range, as: Position.Unit.UTF8.self),
+                    lexed[2].utf8Range,
+                    "explicit Character-to-byte conversion"
+                )
+            }
+
+            Test("byte provenance resolves partial grapheme spans") {
+                let source = "e\u{200D}x"
+                var lexer = Lexer(source: source, sets: .init(keywords: []))
+                let lexed = lexer.lexedTokens()
+                try Expect.equal(lexed[0].token, .identifier("e"), "base letter")
+                try Expect.equal(
+                    lexed[0].range.offsets,
+                    lexed[1].range.offsets,
+                    "Character range necessarily overlaps for a split grapheme"
+                )
+                try Expect.equal(lexed[0].utf8Range?.lowerBound.offset, 0, "base byte start")
+                try Expect.equal(lexed[0].utf8Range?.upperBound.offset, 1, "base byte end")
+                try Expect.equal(lexed[1].utf8Range?.lowerBound.offset, 1, "mark byte start")
+                try Expect.equal(lexed[1].utf8Range?.upperBound.offset, 4, "mark byte end")
+                try Expect.equal(lexed[2].utf8Range?.lowerBound.offset, 4, "next token byte start")
+            }
+
+            Test("mapped collection retains exact lexeme byte provenance") {
+                var lexer = Lexer(source: "é", sets: .init(keywords: []))
+                let collected = lexer.tokens.collect(map: true)
+                try Expect.equal(collected.lexed?.first?.utf8Range?.upperBound.offset, 2, "retained bytes")
+                try Expect.equal(collected.ranges?.first?.end.offset, 1, "Character view")
+            }
+
             Test("positioned lexing uses Character offsets and excludes skipped trivia") {
                 let source = "alpha 👨‍👩‍👧‍👦 beta"
                 var options = LexerOptions()
@@ -187,12 +246,15 @@ extension LexingTestSuite {
             tags: ["codable", "lexed-token", "token"]
         ) {
             Test("Token and LexedToken round-trip as durable lexical values") {
+                let start = try Position.Offset<Position.Unit.UTF8>(3)
+                let end = try Position.Offset<Position.Unit.UTF8>(8)
                 let value = LexedToken(
                     token: .identifier("alpha"),
                     range: PositionRange(
                         uncheckedStart: .init(3),
                         uncheckedEnd: .init(8)
-                    )
+                    ),
+                    utf8Range: start..<end
                 )
                 let encoded = try JSONEncoder().encode(value)
                 let decoded = try JSONDecoder().decode(

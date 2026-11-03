@@ -12,6 +12,8 @@ public struct Lexer: Lexing, PositionedLexing {
     private var activeBlockPolicy: BlockStringPolicy? = nil
     private let scalarBoundaryStartCharacterOffsets: [Int]
     private let scalarBoundaryEndCharacterOffsets: [Int]
+    private let scalarBoundaryUTF8Offsets: [Int]
+    private let sourceLineTable: LineTable
 
     public let sets: LexingSets
     public let options: LexerOptions
@@ -29,6 +31,8 @@ public struct Lexer: Lexing, PositionedLexing {
         let offsets = Self.characterOffsetsByScalarBoundary(source)
         self.scalarBoundaryStartCharacterOffsets = offsets.start
         self.scalarBoundaryEndCharacterOffsets = offsets.end
+        self.scalarBoundaryUTF8Offsets = Self.utf8OffsetsByScalarBoundary(self.scalars)
+        self.sourceLineTable = LineTable(text: source)
         self.sets = sets
         self.options = options
         self.config = config
@@ -312,15 +316,17 @@ public struct Lexer: Lexing, PositionedLexing {
         }
     }
 
-    @inlinable
     public func loc(
         file: String? = nil,
         columnOverride: Int? = nil
     ) -> Position {
-        Position(
+        let offset = characterStartOffset(atScalarBoundary: index)
+        let exact = sourceLineTable.position(at: .init(offset), file: file)
+        guard let columnOverride else { return exact }
+        return Position(
             uncheckedFile: file,
-            line: line,
-            column: columnOverride ?? column,
+            line: exact.line,
+            column: columnOverride,
             invocation: nil
         )
     }
@@ -355,8 +361,32 @@ private extension Lexer {
                 uncheckedEnd: .init(
                     characterEndOffset(atScalarBoundary: index)
                 )
-            )
+            ),
+            utf8Range: utf8Range(fromScalarBoundary: start)
         )
+    }
+
+    func utf8Range(
+        fromScalarBoundary start: Int
+    ) -> Range<Position.Offset<Position.Unit.UTF8>>? {
+        guard scalarBoundaryUTF8Offsets.indices.contains(start),
+              scalarBoundaryUTF8Offsets.indices.contains(index),
+              let lower = try? Position.Offset<Position.Unit.UTF8>(scalarBoundaryUTF8Offsets[start]),
+              let upper = try? Position.Offset<Position.Unit.UTF8>(scalarBoundaryUTF8Offsets[index]) else {
+            return nil
+        }
+        return lower..<upper
+    }
+
+    static func utf8OffsetsByScalarBoundary(_ scalars: [UnicodeScalar]) -> [Int] {
+        var result = [0]
+        result.reserveCapacity(scalars.count + 1)
+        var offset = 0
+        for scalar in scalars {
+            offset += scalar.utf8.count
+            result.append(offset)
+        }
+        return result
     }
 
     func characterStartOffset(atScalarBoundary boundary: Int) -> Int {

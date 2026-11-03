@@ -17,6 +17,14 @@ public extension Lexer {
         guard index < scalars.count else { return }
         let s = scalars[index]
         index += 1
-        if s == "\n" { line += 1; column = 1 } else { column += 1 }
+        if s == "\r" {
+            line += 1
+            column = 1
+        } else if s == "\n" {
+            if index < 2 || scalars[index - 2] != "\r" { line += 1 }
+            column = 1
+        } else {
+            column += 1
+        }
     }
 }
