@@ -160,7 +160,8 @@ public enum Token: Equatable, Sendable, Codable, Hashable {
              (.date_literal, .date_literal),
              (.whitespace, .whitespace),
              (.comment_line, .comment_line),
-             (.comment_block, .comment_block): 
+             (.comment_block, .comment_block),
+             (.error, .error): 
              return true
 
         case (.at, .at),

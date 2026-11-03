@@ -3,18 +3,22 @@ import Foundation
 public extension Lexer {
     @inline(__always)
     func peek() -> UnicodeScalar? {
-        index < scalars.count ? scalars[index] : nil
+        guard index >= 0, index < scalars.count else { return nil }
+        return scalars[index]
     }
 
     @inline(__always)
     func peek(aheadBy n: Int) -> UnicodeScalar? {
-        let j = index + n
-        return j < scalars.count ? scalars[j] : nil
+        guard index >= 0, index < scalars.count,
+              n >= 0, n < scalars.count - index else {
+            return nil
+        }
+        return scalars[index + n]
     }
 
     @inline(__always)
     mutating func advance() {
-        guard index < scalars.count else { return }
+        guard index >= 0, index < scalars.count else { return }
         let s = scalars[index]
         index += 1
         if s == "\r" {

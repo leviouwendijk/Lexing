@@ -12,6 +12,29 @@ extension LexingTestSuite {
                 try Expect.equal(Token.less_than.sameCase(as: .less_than), true, "legacy alias")
             }
 
+            Test("explicit identifiers override keyword and block classification") {
+                var lexer = Lexer(
+                    source: "raw reserved plain",
+                    sets: .init(
+                        keywords: ["raw", "reserved"],
+                        idents: ["raw", "reserved"],
+                        stringBlockKeywords: ["raw"]
+                    )
+                )
+                try Expect.equal(
+                    lexer.tokens.collect(map: false).values,
+                    [.identifier("raw"), .identifier("reserved"), .identifier("plain"), .eof],
+                    "explicit identifier precedence"
+                )
+            }
+
+            Test("error tokens match their own enum case") {
+                var lexer = Lexer(source: "?", sets: .init(keywords: []))
+                let token = lexer.nextToken()
+                try Expect.equal(token.samecase(as: token), true, "reflexive error case")
+                try Expect.equal(token.samecase(as: .eof), false, "distinct cases")
+            }
+
             Test("canonical declarations retain legacy aliases") {
                 let _: Lexer.Options = LexerOptions()
                 let _: Lexer.Config = LexerConfig()

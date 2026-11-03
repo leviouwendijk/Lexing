@@ -268,6 +268,10 @@ public struct Lexer: Lexing, PositionedLexing {
         {
             let identifier = readIdent()
 
+            if sets.idents.contains(identifier) {
+                return emitted(.identifier(identifier), fromScalarBoundary: start)
+            }
+
             if sets.stringBlockKeywords.contains(identifier) {
                 activeBlockPolicy = options.block_string_policies.policy(for: identifier)
                 string_block_state = .awaitingOpen

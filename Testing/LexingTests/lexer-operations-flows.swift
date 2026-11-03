@@ -4,6 +4,31 @@ import Testing
 extension LexingTestSuite {
     static var operationsSuite: TestSuite {
         TestSuite("lexer-operations") {
+            Test("scalar cursor lookahead never indexes outside the source") {
+                var lexer = Lexer(source: "ab", sets: .init(keywords: []))
+                try Expect.equal(lexer.peek(), "a", "initial scalar")
+                try Expect.equal(lexer.peek(aheadBy: -1), nil, "negative lookahead")
+                try Expect.equal(lexer.peek(aheadBy: Int.max), nil, "overflow-safe lookahead")
+                lexer.advance()
+                try Expect.equal(lexer.peek(), "b", "second scalar")
+                try Expect.equal(lexer.peek(aheadBy: 1), nil, "past source end")
+                lexer.advance()
+                try Expect.equal(lexer.peek(), nil, "end of source")
+                try Expect.equal(lexer.peek(aheadBy: Int.max), nil, "EOF lookahead")
+            }
+
+            Test("speculative scan restores a midstream cursor") {
+                var lexer = Lexer(source: "alpha\n2026-xx-yy", sets: .init(keywords: []))
+                try Expect.equal(lexer.nextToken(), .identifier("alpha"), "prefix")
+                try Expect.equal(lexer.nextToken(), .newline, "newline")
+                let index = lexer.index
+                let location = lexer.loc()
+                try Expect.equal(lexer.scan.date_literal(), nil, "invalid date")
+                try Expect.equal(lexer.index, index, "scalar index")
+                try Expect.equal(lexer.loc().line, location.line, "source line")
+                try Expect.equal(lexer.loc().column, location.column, "source column")
+            }
+
             Test("speculative scan restores state on failure") {
                 var lexer = Lexer(source: "2026-xx-yy", sets: .init(keywords: []))
                 try Expect.equal(lexer.scan.date_literal(), nil, "not a date")
