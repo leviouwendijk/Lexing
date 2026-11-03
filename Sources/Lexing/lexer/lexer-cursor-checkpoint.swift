@@ -5,11 +5,11 @@ extension Lexer {
         let column: Int
     }
 
-    func cursorCheckpoint() -> CursorCheckpoint {
+    func checkpoint() -> CursorCheckpoint {
         .init(index: index, line: line, column: column)
     }
 
-    mutating func restoreCursor(_ checkpoint: CursorCheckpoint) {
+    mutating func restore(_ checkpoint: CursorCheckpoint) {
         index = checkpoint.index
         line = checkpoint.line
         column = checkpoint.column

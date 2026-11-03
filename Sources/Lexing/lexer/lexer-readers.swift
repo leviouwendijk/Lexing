@@ -237,12 +237,12 @@ public extension Lexer {
     /// Fast path for date-like literals; return nil to skip if not sure.
     internal mutating func _date_literal() -> String? {
         // minimal stub: recognize YYYY-MM-DD or YYYY/MM/DD
-        let checkpoint = cursorCheckpoint()
+        let checkpoint = checkpoint()
         var buf = String.UnicodeScalarView()
 
         // need 10 or more chars
         for _ in 0..<10 {
-            guard let s = peek() else { restoreCursor(checkpoint); return nil }
+            guard let s = peek() else { restore(checkpoint); return nil }
             buf.append(s); advance()
         }
         let s = String(buf)
@@ -258,7 +258,7 @@ public extension Lexer {
             }
             return String(buf)
         }
-        restoreCursor(checkpoint)
+        restore(checkpoint)
         return nil
     }
 
