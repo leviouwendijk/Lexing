@@ -82,5 +82,13 @@ public extension Lexer {
         public var normalize_newlines: Bool = true
 
         public init() {}
+
+        /// Explicit lossless emission policy. The existing default is unchanged.
+        public static var lossless: Self {
+            var options = Self()
+            options.emit = .init(whitespace: true, newlines: true, comments: true)
+            options.unsupported = .error_token
+            return options
+        }
     }
 }

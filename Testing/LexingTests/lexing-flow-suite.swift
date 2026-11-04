@@ -10,5 +10,6 @@ enum LexingTestSuite {
         correctnessSuite
         apiSuite
         operationsSuite
+        losslessCoverageSuite
     }
 }
