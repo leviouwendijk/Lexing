@@ -29,6 +29,19 @@ extension LexingTestSuite {
                 ], "standalone CR is a newline")
             }
 
+            Test("canonical lexing result has nonoptional byte spans and diagnostics") {
+                let source = "a🙂\r\n"
+                let result = try LexingResult.collect(source: source, sets: .init(keywords: []))
+                try Expect.equal(result.source, source, "immutable source retained")
+                try Expect.equal(result.tokens.last?.range.lowerBound.offset, source.utf8.count,
+                                 "EOF at exact byte boundary")
+                try Expect.equal(result.diagnostics.count, 1, "unsupported scalar is diagnosed")
+                try Expect.equal(result.diagnostics[0].range.lowerBound.offset, 1,
+                                 "emoji byte range begins after ASCII")
+                try Expect.equal(result.diagnostics[0].range.upperBound.offset, 5,
+                                 "emoji spans four UTF-8 bytes")
+            }
+
             Test("gaps and missing provenance fail explicitly") {
                 let missing = LexedToken(
                     token: .identifier("a"),

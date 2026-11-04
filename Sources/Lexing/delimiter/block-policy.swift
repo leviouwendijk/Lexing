@@ -31,11 +31,11 @@ public extension Lexer.Block {
     }
 
     struct Policies: Sendable {
-        public var predetermined: [[String]: Policy] = [:]
+        public var predetermined: [String: Policy] = [:]
         public var fallback: Policy
 
         public init(
-            predetermined: [[String]: Policy] = [:],
+            predetermined: [String: Policy] = [:],
             fallback: Policy
         ) {
             self.predetermined = predetermined
@@ -43,10 +43,7 @@ public extension Lexer.Block {
         }
 
         public func policy(for keyword: String) -> Policy {
-            for (keys, policy) in predetermined where keys.contains(keyword) {
-                return policy
-            }
-            return fallback
+            predetermined[keyword] ?? fallback
         }
     }
 }

@@ -9,6 +9,7 @@ enum LexingTestSuite {
         tokenCodableSuite
         correctnessSuite
         apiSuite
+        specificationSuite
         operationsSuite
         losslessCoverageSuite
     }

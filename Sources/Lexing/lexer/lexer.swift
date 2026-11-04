@@ -7,23 +7,23 @@ public struct Lexer: Lexing, PositionedLexing {
     public var index: Int = 0
     public var line: Int = 1
     public var column: Int = 1
-    public var string_block_state: LexStringBlockState = .none
+    public var string_block_state: Lexer.Block.State = .none
 
-    private var activeBlockPolicy: BlockStringPolicy? = nil
+    private var activeBlockPolicy: Lexer.Block.Policy? = nil
     private let scalarBoundaryStartCharacterOffsets: [Int]
     private let scalarBoundaryEndCharacterOffsets: [Int]
     private let scalarBoundaryUTF8Offsets: [Int]
     private let sourceLineTable: LineTable
 
-    public let sets: LexingSets
-    public let options: LexerOptions
-    public let config: LexerConfig
+    public let sets: Lexer.Vocabulary
+    public let options: Lexer.Options
+    public let config: Lexer.Config
 
     public init(
         source: String,
-        sets: LexingSets,
-        options: LexerOptions = .init(),
-        config: LexerConfig = .init()
+        sets: Lexer.Vocabulary,
+        options: Lexer.Options = .init(),
+        config: Lexer.Config = .init()
     ) {
         self.source = source
         self.scalars = Array(source.unicodeScalars)
@@ -60,7 +60,7 @@ public struct Lexer: Lexing, PositionedLexing {
             while true {
                 let start = index
                 if let whitespace = readWhitespaceRun() {
-                    if options.emit_whitespace {
+                    if options.emit.whitespace {
                         return emitted(.whitespace(whitespace), fromScalarBoundary: start)
                     }
                     continue
@@ -68,7 +68,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
                 let newlineStart = index
                 if readNormalizedNewline(options.normalize_newlines) {
-                    if options.emit_newlines {
+                    if options.emit.newlines {
                         return emitted(.newline, fromScalarBoundary: newlineStart)
                     }
                     continue
@@ -76,7 +76,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
                 let commentStart = index
                 if let comment = readComment(options.comments) {
-                    if options.emit_comments {
+                    if options.emit.comments {
                         return emitted(comment, fromScalarBoundary: commentStart)
                     }
                     if case .error = comment {
@@ -88,7 +88,7 @@ public struct Lexer: Lexing, PositionedLexing {
                 break
             }
 
-            let policy = activeBlockPolicy ?? options.block_string_policies.fallback
+            let policy = activeBlockPolicy ?? options.block.policies.fallback
             let start = index
             guard match(policy.delimiter.start) else {
                 string_block_state = .none
@@ -103,7 +103,7 @@ public struct Lexer: Lexing, PositionedLexing {
             return emitted(leftToken(for: policy.delimiter), fromScalarBoundary: start)
 
         case .awaitingContent:
-            let policy = activeBlockPolicy ?? options.block_string_policies.fallback
+            let policy = activeBlockPolicy ?? options.block.policies.fallback
             let start = index
             let text = _block_body(
                 delimiter: policy.delimiter,
@@ -116,7 +116,7 @@ public struct Lexer: Lexing, PositionedLexing {
             while true {
                 let start = index
                 if let whitespace = readWhitespaceRun() {
-                    if options.emit_whitespace {
+                    if options.emit.whitespace {
                         return emitted(.whitespace(whitespace), fromScalarBoundary: start)
                     }
                     continue
@@ -124,7 +124,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
                 let newlineStart = index
                 if readNormalizedNewline(options.normalize_newlines) {
-                    if options.emit_newlines {
+                    if options.emit.newlines {
                         return emitted(.newline, fromScalarBoundary: newlineStart)
                     }
                     continue
@@ -132,7 +132,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
                 let commentStart = index
                 if let comment = readComment(options.comments) {
-                    if options.emit_comments {
+                    if options.emit.comments {
                         return emitted(comment, fromScalarBoundary: commentStart)
                     }
                     if case .error = comment {
@@ -144,7 +144,7 @@ public struct Lexer: Lexing, PositionedLexing {
                 break
             }
 
-            let policy = activeBlockPolicy ?? options.block_string_policies.fallback
+            let policy = activeBlockPolicy ?? options.block.policies.fallback
             let start = index
             guard match(policy.delimiter.end) else {
                 string_block_state = .none
@@ -165,7 +165,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
         let whitespaceStart = index
         if let whitespace = readWhitespaceRun() {
-            if options.emit_whitespace {
+            if options.emit.whitespace {
                 return emitted(.whitespace(whitespace), fromScalarBoundary: whitespaceStart)
             }
             return nil
@@ -173,7 +173,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
         let newlineStart = index
         if readNormalizedNewline(options.normalize_newlines) {
-            if options.emit_newlines {
+            if options.emit.newlines {
                 return emitted(.newline, fromScalarBoundary: newlineStart)
             }
             return nil
@@ -181,7 +181,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
         let commentStart = index
         if let comment = readComment(options.comments) {
-            if options.emit_comments {
+            if options.emit.comments {
                 return emitted(comment, fromScalarBoundary: commentStart)
             }
             if case .error = comment {
@@ -190,9 +190,11 @@ public struct Lexer: Lexing, PositionedLexing {
             return nil
         }
 
-        let dateStart = index
-        if let literal = _date_literal() {
-            return emitted(.date_literal(literal), fromScalarBoundary: dateStart)
+        if options.recognize_dates {
+            let dateStart = index
+            if let literal = _date_literal() {
+                return emitted(.date_literal(literal), fromScalarBoundary: dateStart)
+            }
         }
 
         let start = index
@@ -273,7 +275,7 @@ public struct Lexer: Lexing, PositionedLexing {
             }
 
             if sets.stringBlockKeywords.contains(identifier) {
-                activeBlockPolicy = options.block_string_policies.policy(for: identifier)
+                activeBlockPolicy = options.block.policies.policy(for: identifier)
                 string_block_state = .awaitingOpen
                 return emitted(.keyword(identifier), fromScalarBoundary: start)
             }
@@ -305,7 +307,7 @@ public struct Lexer: Lexing, PositionedLexing {
         case "[": return .left_bracket
         case "(": return .left_parenthesis
         case "<": return .less_than
-        default: return .left_brace
+        default: return .error("Unsupported opening delimiter '\(delimiter.start)'", at: loc())
         }
     }
 
@@ -316,7 +318,7 @@ public struct Lexer: Lexing, PositionedLexing {
         case "]": return .right_bracket
         case ")": return .right_parenthesis
         case ">": return .greater_than
-        default: return .right_brace
+        default: return .error("Unsupported closing delimiter '\(delimiter.end)'", at: loc())
         }
     }
 

@@ -16,10 +16,10 @@ public extension Lexer {
         public mutating func quoted() throws -> String {
             let at = lexer.loc()
             guard lexer.match("\"") else {
-                throw LexerError.message("Expected opening double quote", at: at)
+                throw Lexer.Error.message("Expected opening double quote", at: at)
             }
             guard let text = lexer._quoted_body() else {
-                throw LexerError.unterminated(delimiter: "\"", at: at)
+                throw Lexer.Error.unterminated(delimiter: "\"", at: at)
             }
             return text
         }
@@ -31,11 +31,11 @@ public extension Lexer {
             let at = lexer.loc()
             guard !delimiter.start.isEmpty, !delimiter.end.isEmpty,
                   lexer.match(delimiter.start) else {
-                throw LexerError.message("Expected opening delimiter", at: at)
+                throw Lexer.Error.message("Expected opening delimiter", at: at)
             }
             let text = lexer._block_body(delimiter: delimiter, options: options)
             guard lexer.match(delimiter.end) else {
-                throw LexerError.unterminated(delimiter: delimiter.end, at: at)
+                throw Lexer.Error.unterminated(delimiter: delimiter.end, at: at)
             }
             return text
         }

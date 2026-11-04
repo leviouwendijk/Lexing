@@ -40,38 +40,8 @@ public extension Lexer {
         public var identifier: IdentifierContinuation = .dotted_hyphenated
         public var emit: Emit = .init()
 
-        // Preserve existing language defaults until the grammar separation pass.
-        public var block: Block = .init(policies: .init(
-            predetermined: [
-                ["details"]: .init(
-                    delimiter: .braces,
-                    options: .init(
-                        trimWhitespace: true,
-                        unquoteIfWrapped: true,
-                        unescapeCommon: true,
-                        normalizeNewlines: true
-                    )
-                ),
-                ["raw"]: .init(
-                    delimiter: .braces,
-                    options: .init(
-                        trimWhitespace: false,
-                        unquoteIfWrapped: false,
-                        unescapeCommon: false,
-                        normalizeNewlines: false
-                    )
-                )
-            ],
-            fallback: .init(
-                delimiter: .braces,
-                options: .init(
-                    trimWhitespace: true,
-                    unquoteIfWrapped: false,
-                    unescapeCommon: false,
-                    normalizeNewlines: true
-                )
-            )
-        ))
+        // Language-specific block keywords and body normalization belong to consumers.
+        public var block: Block = .init(policies: .init(fallback: .init()))
 
         public var comments: [CommentSignature] = [
             .line(prefix: "//"),
@@ -81,6 +51,10 @@ public extension Lexer {
 
         public var normalize_newlines: Bool = true
 
+        /// The low-level Lexer preserves its historical implicit date matching.
+        /// Canonical lossless specifications disable it unless requested.
+        public var recognize_dates: Bool = true
+
         public init() {}
 
         /// Explicit lossless emission policy. The existing default is unchanged.
@@ -88,6 +62,7 @@ public extension Lexer {
             var options = Self()
             options.emit = .init(whitespace: true, newlines: true, comments: true)
             options.unsupported = .error_token
+            options.recognize_dates = false
             return options
         }
     }

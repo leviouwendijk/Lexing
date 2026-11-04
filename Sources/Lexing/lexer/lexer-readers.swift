@@ -31,7 +31,7 @@ public extension Lexer {
 
     internal mutating func _block_body(
         delimiter: Delimiter,
-        options: BlockStringOptions
+        options: Lexer.Block.Options
     ) -> String {
         var depth = 1
         var out = String.UnicodeScalarView()
@@ -92,7 +92,7 @@ public extension Lexer {
     }
 
     @inline(__always)
-    mutating func unescapeQuotedPayload(_ payload: String, options: BlockStringOptions) -> String {
+    mutating func unescapeQuotedPayload(_ payload: String, options: Lexer.Block.Options) -> String {
         guard options.unescapeCommon else { return payload }
         // simple escapes: \n \t \" \\
         let scalars = Array(payload.unicodeScalars)
