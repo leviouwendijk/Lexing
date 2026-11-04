@@ -289,7 +289,7 @@ public struct Lexer: Lexing, PositionedLexing {
 
         let location = loc()
         advance()
-        switch options.unsupported_scalars {
+        switch options.unsupported {
         case .error_token:
             return emitted(
                 .error("Unsupported source scalar '\(scalar)'", at: location),

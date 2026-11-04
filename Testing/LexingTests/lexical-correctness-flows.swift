@@ -70,13 +70,13 @@ extension LexingTestSuite {
             }
 
             Test("punctuation case comparison is reflexive and distinct") {
-                try Expect.equal(Token.less_than.sameCase(as: .less_than), true, "less-than matches itself")
-                try Expect.equal(Token.greater_than.sameCase(as: .greater_than), true, "greater-than matches itself")
-                try Expect.equal(Token.less_than.sameCase(as: .greater_than), false, "distinct punctuation")
+                try Expect.equal(Token.less_than.samecase(as: .less_than), true, "less-than matches itself")
+                try Expect.equal(Token.greater_than.samecase(as: .greater_than), true, "greater-than matches itself")
+                try Expect.equal(Token.less_than.samecase(as: .greater_than), false, "distinct punctuation")
             }
 
             Test("unsupported scalars emit errors without erasing following input") {
-                var lexer = Lexer(source: "!ok", sets: LexingSets(keywords: []))
+                var lexer = Lexer(source: "!ok", sets: Lexer.Vocabulary(keywords: []))
                 let tokens = lexer.lexedTokens()
                 try Expect.equal(tokens.count, 3, "error, identifier, EOF")
                 if case .error = tokens[0].token {
@@ -90,7 +90,7 @@ extension LexingTestSuite {
             }
 
             Test("unrepresentable numeric literal is not coerced to zero") {
-                var lexer = Lexer(source: "٢٢", sets: LexingSets(keywords: []))
+                var lexer = Lexer(source: "٢٢", sets: Lexer.Vocabulary(keywords: []))
                 let first = lexer.nextToken()
                 if case .error = first {
                     try Expect.equal(lexer.nextToken(), .eof, "error followed by EOF")
@@ -100,8 +100,8 @@ extension LexingTestSuite {
             }
 
             Test("failed date lookahead restores index, line and column") {
-                var lexer = Lexer(source: "2026-xx-yy tail", sets: LexingSets(keywords: []))
-                let result = lexer.scanDateLiteral()
+                var lexer = Lexer(source: "2026-xx-yy tail", sets: Lexer.Vocabulary(keywords: []))
+                let result = lexer.scan.date_literal()
                 try Expect.equal(result, nil, "not a date")
                 try Expect.equal(lexer.index, 0, "index restored")
                 try Expect.equal(lexer.line, 1, "line restored")
@@ -133,7 +133,7 @@ extension LexingTestSuite {
             }
 
             Test("unterminated quote reports an error and then EOF") {
-                var lexer = Lexer(source: "\"unfinished", sets: LexingSets(keywords: []))
+                var lexer = Lexer(source: "\"unfinished", sets: Lexer.Vocabulary(keywords: []))
                 if case .error = lexer.nextToken() {
                     try Expect.equal(lexer.nextToken(), .eof, "EOF only after error")
                 } else {
@@ -144,7 +144,7 @@ extension LexingTestSuite {
             Test("missing string-block opening delimiter reports an error") {
                 var lexer = Lexer(
                     source: "raw value",
-                    sets: LexingSets(keywords: [], stringBlockKeywords: ["raw"])
+                    sets: Lexer.Vocabulary(keywords: [], stringBlockKeywords: ["raw"])
                 )
                 try Expect.equal(lexer.nextToken(), .keyword("raw"), "block trigger")
                 if case .error = lexer.nextToken() {
@@ -157,7 +157,7 @@ extension LexingTestSuite {
             Test("unterminated block and comment report errors") {
                 var block = Lexer(
                     source: "raw {body",
-                    sets: LexingSets(keywords: [], stringBlockKeywords: ["raw"])
+                    sets: Lexer.Vocabulary(keywords: [], stringBlockKeywords: ["raw"])
                 )
                 try Expect.equal(block.nextToken(), .keyword("raw"), "block trigger")
                 try Expect.equal(block.nextToken(), .left_brace, "opening brace")
@@ -168,7 +168,7 @@ extension LexingTestSuite {
                     try Expect.equal(true, false, "unterminated block must report an error")
                 }
 
-                var comment = Lexer(source: "/* open", sets: LexingSets(keywords: []))
+                var comment = Lexer(source: "/* open", sets: Lexer.Vocabulary(keywords: []))
                 if case .error = comment.nextToken() {
                     try Expect.equal(comment.nextToken(), .eof, "comment EOF follows error")
                 } else {

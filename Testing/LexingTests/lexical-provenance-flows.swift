@@ -70,11 +70,11 @@ extension LexingTestSuite {
 
             Test("positioned lexing uses Character offsets and excludes skipped trivia") {
                 let source = "alpha 👨‍👩‍👧‍👦 beta"
-                var options = LexerOptions()
-                options.unsupported_scalars = .skip
+                var options = Lexer.Options()
+                options.unsupported = .skip
                 var lexer = Lexer(
                     source: source,
-                    sets: LexingSets(keywords: []),
+                    sets: Lexer.Vocabulary(keywords: []),
                     options: options
                 )
                 let lexed = lexer.lexedTokens()
@@ -101,16 +101,16 @@ extension LexingTestSuite {
 
                 var defaultLexer = Lexer(
                     source: source,
-                    sets: LexingSets(keywords: [])
+                    sets: Lexer.Vocabulary(keywords: [])
                 )
                 let defaultTokens = defaultLexer.lexedTokens().map(\.token)
 
-                var punctuationOptions = LexerOptions()
-                punctuationOptions.identifier_continuation = .punctuation_delimited
+                var punctuationOptions = Lexer.Options()
+                punctuationOptions.identifier = .punctuation_delimited
 
                 var punctuationLexer = Lexer(
                     source: source,
-                    sets: LexingSets(keywords: []),
+                    sets: Lexer.Vocabulary(keywords: []),
                     options: punctuationOptions
                 )
                 let punctuationTokens = punctuationLexer.lexedTokens().map(\.token)
@@ -140,11 +140,11 @@ extension LexingTestSuite {
             }
             Test("long unsupported scalar run terminates without stack overflow") {
                 let source = String(repeating: "!", count: 100_000)
-                var options = LexerOptions()
-                options.unsupported_scalars = .skip
+                var options = Lexer.Options()
+                options.unsupported = .skip
                 var lexer = Lexer(
                     source: source,
-                    sets: LexingSets(keywords: []),
+                    sets: Lexer.Vocabulary(keywords: []),
                     options: options
                 )
 
@@ -154,11 +154,11 @@ extension LexingTestSuite {
 
             Test("long unsupported prefix preserves following token provenance") {
                 let source = String(repeating: "^", count: 50_000) + "tail"
-                var options = LexerOptions()
-                options.unsupported_scalars = .skip
+                var options = Lexer.Options()
+                options.unsupported = .skip
                 var lexer = Lexer(
                     source: source,
-                    sets: LexingSets(keywords: []),
+                    sets: Lexer.Vocabulary(keywords: []),
                     options: options
                 )
 
@@ -171,11 +171,11 @@ extension LexingTestSuite {
 
             Test("CSV-like input preserves tokens across long unsupported runs") {
                 let source = "a," + String(repeating: "!", count: 20_000) + "\nb"
-                var options = LexerOptions()
-                options.unsupported_scalars = .skip
+                var options = Lexer.Options()
+                options.unsupported = .skip
                 var lexer = Lexer(
                     source: source,
-                    sets: LexingSets(keywords: []),
+                    sets: Lexer.Vocabulary(keywords: []),
                     options: options
                 )
                 let lexed = lexer.lexedTokens()
@@ -199,11 +199,11 @@ extension LexingTestSuite {
 
             Test("RTF-like input does not recurse through unsupported content") {
                 let source = "{\\rtf1 " + String(repeating: "^", count: 20_000) + "body}"
-                var options = LexerOptions()
-                options.unsupported_scalars = .skip
+                var options = Lexer.Options()
+                options.unsupported = .skip
                 var lexer = Lexer(
                     source: source,
-                    sets: LexingSets(keywords: []),
+                    sets: Lexer.Vocabulary(keywords: []),
                     options: options
                 )
 
@@ -223,11 +223,11 @@ extension LexingTestSuite {
 
             Test("extended Unicode skips preserve Character-based offsets") {
                 let source = String(repeating: "👨‍👩‍👧‍👦", count: 1_000) + "tail"
-                var options = LexerOptions()
-                options.unsupported_scalars = .skip
+                var options = Lexer.Options()
+                options.unsupported = .skip
                 var lexer = Lexer(
                     source: source,
-                    sets: LexingSets(keywords: []),
+                    sets: Lexer.Vocabulary(keywords: []),
                     options: options
                 )
 

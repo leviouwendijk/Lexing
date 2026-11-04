@@ -4,12 +4,11 @@ import Testing
 extension LexingTestSuite {
     static var apiSuite: TestSuite {
         TestSuite("lexing-api") {
-            Test("canonical names and compatibility are equivalent") {
-                try Expect.equal(Delimiter.quotes_double, .doubleQuotes, "double quote alias")
-                try Expect.equal(Delimiter.quotes_single, .singleQuotes, "single quote alias")
+            Test("canonical lexer names are stable") {
+                try Expect.equal(Delimiter.quotes_double.start, "\"", "double quote preset")
+                try Expect.equal(Delimiter.quotes_single.start, "'", "single quote preset")
                 try Expect.equal(Token.less_than.samecase(as: .less_than), true, "samecase")
                 try Expect.equal(Token.less_than.samecase(as: .greater_than), false, "distinct cases")
-                try Expect.equal(Token.less_than.sameCase(as: .less_than), true, "legacy alias")
             }
 
             Test("explicit identifiers override keyword and block classification") {
@@ -35,13 +34,13 @@ extension LexingTestSuite {
                 try Expect.equal(token.samecase(as: .eof), false, "distinct cases")
             }
 
-            Test("canonical declarations retain legacy aliases") {
-                let _: Lexer.Options = LexerOptions()
-                let _: Lexer.Config = LexerConfig()
-                let _: Lexer.Vocabulary = LexingSets(keywords: [])
-                let _: Lexer.Block.Options = BlockStringOptions()
-                let _: Lexer.Block.Policy = BlockStringPolicy()
-                let _: Lexer.Block.State = LexStringBlockState.none
+            Test("canonical declarations resolve to nested types") {
+                let _: Lexer.Options = Lexer.Options()
+                let _: Lexer.Config = Lexer.Config()
+                let _: Lexer.Vocabulary = Lexer.Vocabulary(keywords: [])
+                let _: Lexer.Block.Options = Lexer.Block.Options()
+                let _: Lexer.Block.Policy = Lexer.Block.Policy()
+                let _: Lexer.Block.State = Lexer.Block.State.none
                 try Expect.equal(
                     String(reflecting: Lexer.Options.self).contains("Lexer.Options"),
                     true,
@@ -49,9 +48,9 @@ extension LexingTestSuite {
                 )
                 var options = Lexer.Options()
                 options.emit.whitespace = true
-                options.emit_whitespace = false
-                try Expect.equal(options.emit.whitespace, false, "legacy field forwards")
-                options.block_string_policies = .init(fallback: .init(delimiter: .parens))
+                options.emit.whitespace = false
+                try Expect.equal(options.emit.whitespace, false, "canonical field write")
+                options.block.policies = .init(fallback: .init(delimiter: .parens))
                 try Expect.equal(options.block.policies.fallback.delimiter, .parens, "block storage")
             }
 
@@ -62,11 +61,11 @@ extension LexingTestSuite {
                 options.emit.comments = true
                 options.unsupported = .skip
                 options.identifier = .punctuation_delimited
-                try Expect.equal(options.emit_whitespace, true, "whitespace")
-                try Expect.equal(options.emit_comments, true, "comments")
-                try Expect.equal(options.unsupported_scalars == .skip, true, "unsupported")
+                try Expect.equal(options.emit.whitespace, true, "whitespace")
+                try Expect.equal(options.emit.comments, true, "comments")
+                try Expect.equal(options.unsupported == .skip, true, "unsupported")
                 try Expect.equal(
-                    options.identifier_continuation == .punctuation_delimited,
+                    options.identifier == .punctuation_delimited,
                     true,
                     "identifier"
                 )

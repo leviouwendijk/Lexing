@@ -1,4 +1,5 @@
 public extension Token {
-    // Compatibility alias. Deprecate after warnings-as-errors consumers migrate.
+    // Compatibility alias for external clients.
+    @available(*, deprecated, renamed: "samecase(as:)")
     func sameCase(as other: Self) -> Bool { samecase(as: other) }
 }

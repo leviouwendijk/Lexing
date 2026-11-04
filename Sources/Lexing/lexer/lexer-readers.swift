@@ -222,7 +222,7 @@ public extension Lexer {
                 return true
             }
 
-            switch options.identifier_continuation {
+            switch options.identifier {
             case .dotted_hyphenated:
                 return s == "-" || s == "."
 
