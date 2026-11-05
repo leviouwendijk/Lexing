@@ -8,6 +8,8 @@ public enum Token: Equatable, Sendable, Codable, Hashable {
     case number(Decimal, raw: String) // 200.00
     case string(String)              // e.g. details { ... } or "..."
     case date_literal(String)        // "2025-02-03", "03/02/2025"
+    case grammar_terminal(name: String, raw: String)
+    case grammar_extra(String)
 
     // trivia 
     case whitespace(String)          // runs of space/tabs
@@ -62,6 +64,8 @@ public enum Token: Equatable, Sendable, Codable, Hashable {
         case .number(_ , let raw):        return raw
         case .string(let s):              return s
         case .date_literal(let d):        return d
+        case .grammar_terminal(_, let raw): return raw
+        case .grammar_extra(let raw): return raw
         case .whitespace(let w):          return w
         case .comment_line(let s):        return s
         case .comment_block(let s):       return s
@@ -103,7 +107,8 @@ public enum Token: Equatable, Sendable, Codable, Hashable {
     // quick classifiers
     public var is_trivia: Bool {
         switch self {
-        case .whitespace, 
+        case .whitespace,
+            .grammar_extra,
             .comment_line,
             .comment_block, 
             .newline:
@@ -152,6 +157,12 @@ public enum Token: Equatable, Sendable, Codable, Hashable {
              (.newline, .newline),
              (.eof, .eof): 
              return true
+
+        case (.grammar_terminal(let first, _), .grammar_terminal(let second, _)):
+            return first == second
+
+        case (.grammar_extra, .grammar_extra):
+            return true
 
         case (.keyword, .keyword),
              (.identifier, .identifier),

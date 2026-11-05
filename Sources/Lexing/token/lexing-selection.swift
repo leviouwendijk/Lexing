@@ -17,7 +17,7 @@ public extension LexingResult {
                 return true
             case .without_spacing:
                 switch located.token {
-                case .whitespace, .comment_line, .comment_block: return false
+                case .whitespace, .comment_line, .comment_block, .grammar_extra: return false
                 default: return true
                 }
             case .significant:

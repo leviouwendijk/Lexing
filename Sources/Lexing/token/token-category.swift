@@ -1,6 +1,7 @@
 public extension Token {
     enum Category: String, Codable, Hashable, Sendable {
         case keyword
+        case grammar
         case identifier
         case number
         case string
@@ -19,6 +20,8 @@ public extension Token {
     var category: Category {
         switch self {
         case .keyword: .keyword
+        case .grammar_terminal: .grammar
+        case .grammar_extra: .whitespace
         case .identifier: .identifier
         case .number: .number
         case .string: .string

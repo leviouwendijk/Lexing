@@ -10,6 +10,7 @@ enum LexingTestSuite {
         correctnessSuite
         apiSuite
         specificationSuite
+        grammarLexingSuite
         operationsSuite
         losslessCoverageSuite
     }
