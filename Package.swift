@@ -12,16 +12,11 @@ let package = Package(
             name: "Lexing",
             targets: ["Lexing"]
         ),
-        .executable(
-            name: "t_lexing",
-            targets: ["LexingTests"]
-        ),
     ],
     dependencies: [
         .package(url: "https://github.com/leviouwendijk/Primitives.git", branch: "master"),
         .package(url: "https://github.com/leviouwendijk/Position.git", branch: "master"),
         .package(url: "https://github.com/leviouwendijk/Grammar.git", branch: "master"),
-        .package(url: "https://github.com/leviouwendijk/Testing.git", branch: "master"),
     ],
     targets: [
         .target(
@@ -31,17 +26,6 @@ let package = Package(
                 .product(name: "Position", package: "Position"),
                 .product(name: "Grammar", package: "Grammar"),
             ]
-        ),
-        .executableTarget(
-            name: "LexingTests",
-            dependencies: [
-                "Lexing",
-                .product(name: "Testing", package: "Testing"),
-                .product(name: "Primitives", package: "Primitives"),
-                .product(name: "Position", package: "Position"),
-                .product(name: "Grammar", package: "Grammar"),
-            ],
-            path: "Testing/LexingTests"
         ),
     ]
 )
