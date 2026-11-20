@@ -17,6 +17,7 @@ let package = Package(
         .package(url: "https://github.com/leviouwendijk/Primitives.git", branch: "master"),
         .package(url: "https://github.com/leviouwendijk/Position.git", branch: "master"),
         .package(url: "https://github.com/leviouwendijk/Grammar.git", branch: "master"),
+        .package(url: "https://github.com/leviouwendijk/Errors.git", branch: "master"),
         .package(url: "https://github.com/leviouwendijk/Testing.git", branch: "master"),
         .package(path: ".."),
     ],
@@ -29,6 +30,7 @@ let package = Package(
                 .product(name: "Primitives", package: "Primitives"),
                 .product(name: "Position", package: "Position"),
                 .product(name: "Grammar", package: "Grammar"),
+                .product(name: "Errors", package: "Errors"),
             ]
         ),
     ]

@@ -1,4 +1,6 @@
+import Errors
 import Lexing
+import Position
 import Testing
 
 extension LexingTestSuite {
@@ -33,6 +35,28 @@ extension LexingTestSuite {
                     _ = try Lexer.Specification(vocabulary: .init(keywords: [], stringBlockKeywords: ["raw"]))
                     try Expect.true(false, "must reject missing block policy")
                 } catch Lexer.Specification.Failure.missing_block_policy("raw") {}
+            }
+            Test("lexical errors carry a code, a location and a disposition") {
+                let error = Lexer.Error.unterminated(
+                    delimiter: "}",
+                    at: try Position(file: "people/sam.frame", line: 3, column: 7)
+                )
+                let report = error.report
+                try Expect.equal(report.diagnostic.identity?.raw, "lexing.unterminated", "code")
+                try Expect.equal(error.localizedDescription, "Unterminated block at 3:7.", "message")
+                try Expect.equal(report.presentation.recoverySuggestion, "Close it with }.", "suggestion")
+                try Expect.equal(report.diagnostic[field: "source.line"]?.value, .integer(3), "line")
+                try Expect.equal(
+                    report.diagnostic[field: "source.file"]?.sensitivity,
+                    .potentially_sensitive,
+                    "a file path is marked"
+                )
+                try Expect.equal(report.effectiveDisposition, .invalid_input, "the source must change")
+                try Expect.equal(
+                    Lexer.Specification.Failure.missing_block_policy("raw").report.diagnostic.identity?.raw,
+                    "lexing.specification.missing_block_policy",
+                    "specification code"
+                )
             }
         }
     }
