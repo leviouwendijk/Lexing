@@ -29,6 +29,9 @@ public struct GrammarLexer: Sendable {
     }
 
     private let rules: [Rule]
+    /// The language's `word` terminal (Tree-sitter keyword extraction): a keyword-like match
+    /// never splits a longer word, so `let` lexes as a keyword but `letter` as one identifier.
+    private let word: Rule?
 
     public init(language: Grammar.Language) throws {
         _ = try language.analyze()
@@ -44,6 +47,7 @@ public struct GrammarLexer: Sendable {
         }
 
         var rules: [Rule] = []
+        var word: Rule?
         for terminal in language.terminals {
             let referencedInProductions = language.productions.contains {
                 Self.referencesTerminal($0.expression, named: terminal.name)
@@ -55,6 +59,9 @@ public struct GrammarLexer: Sendable {
                 ? .extra : .terminal(terminal.name)
             try Self.append(terminal.pattern, kind: kind,
                             priority: terminal.lexicalPriority, to: &rules)
+            if terminal.name == language.word {
+                word = rules.last
+            }
         }
 
         // Inline literal/pattern expressions are lexical rules, not a second grammar.
@@ -66,6 +73,7 @@ public struct GrammarLexer: Sendable {
             try Self.append(pattern, kind: .extra, priority: 0, to: &rules)
         }
         self.rules = rules
+        self.word = word
     }
 
     /// Emit all source bytes, including trivia and invalid scalars, exactly once.
@@ -95,6 +103,16 @@ public struct GrammarLexer: Sendable {
                     }
                 }
                 selected = (rule, candidate, length)
+            }
+
+            if let current = selected,
+               let word,
+               current.rule.order != word.order,
+               let longer = Self.match(word.matcher, source: source,
+                                       nsSource: nsSource, search: search),
+               source[longer].utf8.count > current.bytes,
+               Self.matchesWhole(word.matcher, String(source[current.range])) {
+                selected = (word, longer, source[longer].utf8.count)
             }
 
             if let selected {
@@ -151,6 +169,20 @@ public struct GrammarLexer: Sendable {
             match = found
         }
         return Range(match, in: source)
+    }
+
+    /// Whether `text` as a whole is something the matcher accepts (a keyword is a word).
+    private static func matchesWhole(_ matcher: Matcher, _ text: String) -> Bool {
+        switch matcher {
+        case .literal(let value):
+            return text == value
+        case .regular(let regex):
+            let range = NSRange(location: 0, length: (text as NSString).length)
+            guard let found = regex.firstMatch(in: text, options: [.anchored], range: range) else {
+                return false
+            }
+            return found.range == range
+        }
     }
 
     private static func locate(

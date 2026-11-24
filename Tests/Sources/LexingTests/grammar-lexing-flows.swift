@@ -27,6 +27,30 @@ extension LexingTestSuite {
                                  .grammar_terminal(name: "identifier", raw: "letter"),
                                  "identifier is longer than keyword prefix")
             }
+            Test("with a word terminal, a keyword never splits a longer word") {
+                let grammar = try Grammar.Language(name: "word", start: "start", productions: [
+                    .init(name: "start", expression: .repeat0(.choice([
+                        .symbol(.terminal("keyword")),
+                        .symbol(.terminal("identifier")),
+                        .literal(".")
+                    ])))
+                ], terminals: [
+                    .init(name: "identifier", pattern: .regex("[a-z_]+")),
+                    .init(name: "keyword", pattern: .literal("let"), lexicalPriority: 1)
+                ], extras: [
+                    .pattern("[ ]+")
+                ], word: "identifier")
+                let lexer = try GrammarLexer(language: grammar)
+                let tokens = try lexer.lex("letter let let.x").select(.significant).map(\.token)
+                try Expect.equal(tokens, [
+                    .grammar_terminal(name: "identifier", raw: "letter"),
+                    .grammar_terminal(name: "keyword", raw: "let"),
+                    .grammar_terminal(name: "keyword", raw: "let"),
+                    .grammar_terminal(name: "@literal:.", raw: "."),
+                    .grammar_terminal(name: "identifier", raw: "x"),
+                    .eof,
+                ], "keywords whole, identifiers whole")
+            }
             Test("lexical priority wins over length when explicitly assigned") {
                 let grammar = try Grammar.Language(name: "priority", start: "start", productions: [
                     .init(name: "start", expression: .symbol(.terminal("keyword")))
